@@ -3,25 +3,37 @@ import pytesseract
 from PIL import Image
 import cv2
 import numpy as np
+import time
+
+def subprocess_run(cmd_list):
+    result = subprocess.run(cmd_list)
+    # import pdb; pdb.set_trace()
+    # print(result.stdout)
+    time.sleep(1)
+
 
 # 获取图片的长宽
 def get_image_size(image_path):
     image = cv2.imread(image_path)
     height, width, _ = image.shape
     return width, height
-  
+
 # 连接手机
 def connect_device():
-    subprocess.run(['adb', 'devices'])
+    subprocess_run(['adb', 'devices'])
+
 
 # 点击坐标
 def click_coordinate(x, y):
-    subprocess.run(['adb', 'shell', 'input', 'tap', str(x), str(y)])
+    subprocess_run(['adb', 'shell', 'input', 'tap', str(x), str(y)])
 
 # 截屏
-def take_screenshot():
-    subprocess.run(['adb', 'shell', 'screencap', '/sdcard/screenshot.png'])
-    subprocess.run(['adb', 'pull', '/sdcard/screenshot.png'])
+def take_screenshot(new_name=None):
+    subprocess_run(['adb', 'shell', 'screencap', '/sdcard/screenshot.png'])
+    if new_name:
+        subprocess_run(['adb', 'pull', '/sdcard/screenshot.png', new_name])
+    else:
+        subprocess_run(['adb', 'pull', '/sdcard/screenshot.png'])
 
 # 识别图片中的文字
 def recognize_text(image_path, region):
@@ -58,68 +70,52 @@ def compare_images(image1_path, image2_path, region, threshold=0.1):
     change_ratio = non_zero_pixels / total_pixels
     return change_ratio > threshold
 
-# 示例操作
-def perform_operations():
-    # 连接手机
-    connect_device()
-
-    # 截屏
-    take_screenshot()
-
-    # 对比图片
-    previous_screenshot_path = 'previous_screenshot.png'
-    current_screenshot_path = 'screenshot.png'
-    region = (100, 200, 300, 400)  # 指定区域的左上角和右下角坐标
-    change_threshold = 0.1  # 设置变化的阈值
-    has_changed = compare_images(previous_screenshot_path, current_screenshot_path, region, change_threshold)
-    if has_changed:
-        print("区域发生较大变化")
-    else:
-        print("区域未发生较大变化")
-
-    # 更新之前的截屏图片
-    subprocess.run(['mv', current_screenshot_path, previous_screenshot_path])
-
-# 屏幕放大
-def zoom_in():
-    subprocess.run(['adb', 'shell', 'input', 'touchscreen', 'swipe', 'x1', 'y1', 'x2', 'y2', 'duration'])
-
-# 屏幕缩小
-def zoom_out():
-    subprocess.run(['adb', 'shell', 'input', 'touchscreen', 'swipe', 'x2', 'y2', 'x1', 'y1', 'duration'])
-
-
-# 在大图像中查找小图像
+# 判断图片2中是否存在图片1，并返回下标
 def find_image(template_path, image_path, threshold):
     template = cv2.imread(template_path, 0)
     image = cv2.imread(image_path, 0)
 
     result = cv2.matchTemplate(image, template, cv2.TM_CCOEFF_NORMED)
+    # import pdb; pdb.set_trace()
     locations = np.where(result >= threshold)
     locations = list(zip(*locations[::-1]))
 
-    # 返回小图像在大图像中的下标列表
-    return locations
-
-# 示例操作
-def perform_operations():
-    template_path = 'small_image.png'  # 小图像的路径
-    image_path = 'large_image.png'  # 大图像的路径
-    threshold = 0.8  # 匹配的阈值
-
-    # 在大图像中查找小图像
-    results = find_image(template_path, image_path, threshold)
-    if len(results) > 0:
-        print("小图像在大图像中的下标：", results)
+    if locations:
+        # 获得查找结果的中间的坐标
+        x, y = locations[-1][0], locations[-1][1]
+        # height, width = template.shape
+        # x = x + width / 2
+        # y = y + height / 2
+        return (x, y)
     else:
-        print("未找到小图像")
+        return None
 
-# 示例操作
-def perform_operations():
-    # 连接手机
+def click_bar():
     connect_device()
+    bar_img = cv2.imread("bar.png")
+    height, width, _ = bar_img.shape
 
-    # 点击坐标 (x, y)
-    x = 100
-    y = 200
-    click_coordinate(x, y)
+    take_screenshot()
+    ret = find_image("bar.png", "screenshot.png", 0.8)
+    while ret is None:
+        click_coordinate(400, 1000)
+        take_screenshot()
+        ret = find_image("bar.png", "screenshot.png", 0.8)
+        # import pdb; pdb.set_trace()
+
+        print(ret)
+
+    click_coordinate(ret[0]+width/2, ret[1]+height/2)
+
+# 屏幕放大
+def zoom_in():
+    subprocess_run(['adb', 'shell', 'input', 'touchscreen', 'swipe', 'x1', 'y1', 'x2', 'y2', 'duration'])
+
+# 屏幕缩小
+def zoom_out():
+    subprocess_run(['adb', 'shell', 'input', 'touchscreen', 'swipe', 'x2', 'y2', 'x1', 'y1', 'duration'])
+
+zoom_out()
+
+click_bar()
+take_screenshot(new_name="menu.png")
