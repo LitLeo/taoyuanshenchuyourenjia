@@ -4,12 +4,13 @@ from PIL import Image
 import cv2
 import numpy as np
 import time
+# from skimage import feature
 
 def subprocess_run(cmd_list):
     result = subprocess.run(cmd_list)
     # import pdb; pdb.set_trace()
     # print(result.stdout)
-    time.sleep(1)
+    time.sleep(0.5)
 
 
 # 获取图片的长宽
@@ -63,49 +64,72 @@ def compare_images(image1_path, image2_path, region, threshold=0.1):
     cropped_image1 = image1[region[1]:region[3], region[0]:region[2]]
     cropped_image2 = image2[region[1]:region[3], region[0]:region[2]]
     difference = cv2.absdiff(cropped_image1, cropped_image2)
+    # import pdb; pdb.set_trace()
     gray = cv2.cvtColor(difference, cv2.COLOR_BGR2GRAY)
     _, thresholded = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)
     non_zero_pixels = np.count_nonzero(thresholded)
     total_pixels = thresholded.shape[0] * thresholded.shape[1]
     change_ratio = non_zero_pixels / total_pixels
+    print(change_ratio)
     return change_ratio > threshold
 
 # 判断图片2中是否存在图片1，并返回下标
-def find_image(template_path, image_path, threshold):
-    template = cv2.imread(template_path, 0)
-    image = cv2.imread(image_path, 0)
+def find_image(small_img_path, big_image_path, threshold):
+    big_image = cv2.imread(big_image_path)
+    small_image = cv2.imread(small_img_path)
 
-    result = cv2.matchTemplate(image, template, cv2.TM_CCOEFF_NORMED)
-    # import pdb; pdb.set_trace()
-    locations = np.where(result >= threshold)
-    locations = list(zip(*locations[::-1]))
+    # 灰度化
+    gray_big = cv2.cvtColor(big_image, cv2.COLOR_BGR2GRAY)
+    gray_small = cv2.cvtColor(small_image, cv2.COLOR_BGR2GRAY)
 
-    if locations:
-        # 获得查找结果的中间的坐标
-        x, y = locations[-1][0], locations[-1][1]
-        # height, width = template.shape
-        # x = x + width / 2
-        # y = y + height / 2
-        return (x, y)
-    else:
-        return None
+    # 提取关键点和描述子
+    keypoints_big, descriptors_big = feature.sift(gray_big)
+    keypoints_small, descriptors_small = feature.sift(gray_small)
+
+    # 模糊匹配
+    fuzziness = 0.5 # 模糊度参数，可以根据实际情况调整
+    matches = feature.match_descriptors(descriptors_big, descriptors_small, method='bf', fuzziness=fuzziness)
+
+    import pdb; pdb.set_trace()
+    # 暴力匹配
+    matches = np.where(matches == True)
+    for i in range(len(matches[0])):
+        point_big = keypoints_big[matches[0][i]].pt # 大图的匹配点坐标
+        point_small = keypoints_small[matches[1][i]].pt # 小图的匹配点坐标
 
 def click_bar():
     connect_device()
-    bar_img = cv2.imread("bar.png")
-    height, width, _ = bar_img.shape
+    compare_region = [100, 970, 750, 1030]
+    # menu_img = cv2.imread("menu.png")
 
     take_screenshot()
-    ret = find_image("bar.png", "screenshot.png", 0.8)
-    while ret is None:
-        click_coordinate(400, 1000)
+    # screenshot_img = cv2.imread("screenshot.png")
+    ret = compare_images("menu.png", "screenshot.png", compare_region, 0.4)
+    while ret is True:
+        click_coordinate(450, 1000)
         take_screenshot()
-        ret = find_image("bar.png", "screenshot.png", 0.8)
-        # import pdb; pdb.set_trace()
+        # screenshot_img = cv2.imread("screenshot.png")
+        ret = compare_images("menu.png", "screenshot.png", compare_region, 0.4)
 
-        print(ret)
+    # click_coordinate(450, 1000)
+    click_coordinate(670, 990)
+    # return 
 
-    click_coordinate(ret[0]+width/2, ret[1]+height/2)
+    # bar_img = cv2.imread("bar.png")
+    # height, width, _ = bar_img.shape
+
+    # take_screenshot()
+    # ret = find_image("bar.png", "screenshot.png", 0.7)
+    # # import pdb; pdb.set_trace()
+    # while ret is None:
+    #     click_coordinate(450, 1000)
+    #     take_screenshot()
+    #     ret = find_image("bar.png", "screenshot.png", 0.7)
+    #     # import pdb; pdb.set_trace()
+
+    #     print(ret)
+
+    # click_coordinate(ret[0]+width/2, ret[1]+height/2)
 
 # 屏幕放大
 def zoom_in():
@@ -115,7 +139,54 @@ def zoom_in():
 def zoom_out():
     subprocess_run(['adb', 'shell', 'input', 'touchscreen', 'swipe', 'x2', 'y2', 'x1', 'y1', 'duration'])
 
-zoom_out()
+# zoom_out()
 
-click_bar()
-take_screenshot(new_name="menu.png")
+# pixel_2340x1080_coords = [[770, 380], [920, 390], [1100, 380], [1200, 510]]
+# coords = pixel_2340x1080_coords
+
+home_coords = [770, 380]
+zhitang_coords = [1650, 666]
+shimo_coords = [1460, 760]
+doufang_coords = [1800, 750]
+
+tree_coords = [920, 390]
+bamboo_coords = [1100, 380]
+boil_coords = [1200, 510]
+
+factory_queue_coords = [[1210, 950], [1040, 950], [890, 950], [700, 950], [530, 950], [380, 950]]
+factory_mark_coords = [1800, 950]
+factory_close_coords = [2150, 60]
+
+def process_factory0(x, y, name):
+    print("process_" + name)
+    click_coordinate(x, y)
+
+    for coord in factory_queue_coords:
+        click_coordinate(coord[0], coord[1])
+    
+    for coord in factory_queue_coords:
+        click_coordinate(factory_mark_coords[0], factory_mark_coords[1])
+    
+    click_coordinate(factory_close_coords[0], factory_close_coords[1])
+
+def process_home():
+    print("process_home")
+    click_bar()
+    click_coordinate(home_coords[0], home_coords[1])
+    process_factory0(zhitang_coords[0], zhitang_coords[1], name="zhitang")
+
+    click_bar()
+    click_coordinate(home_coords[0], home_coords[1])
+    process_factory0(shimo_coords[0], shimo_coords[1], name="shimo")
+
+    click_bar()
+    click_coordinate(home_coords[0], home_coords[1])
+    process_factory0(doufang_coords[0], doufang_coords[1], name="doufang")
+
+
+def main():
+    # click_bar()
+    process_home()
+
+if __name__ == '__main__':
+    main()  # next section explains the use of sys.exit
