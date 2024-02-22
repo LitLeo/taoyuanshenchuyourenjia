@@ -130,15 +130,6 @@ def click_bar():
     #     print(ret)
 
     # click_coordinate(ret[0]+width/2, ret[1]+height/2)
-
-# 屏幕放大
-def zoom_in():
-    subprocess_run(['adb', 'shell', 'input', 'touchscreen', 'swipe', 'x1', 'y1', 'x2', 'y2', 'duration'])
-
-# 屏幕缩小
-def zoom_out():
-    subprocess_run(['adb', 'shell', 'input', 'touchscreen', 'swipe', 'x2', 'y2', 'x1', 'y1', 'duration'])
-
 # zoom_out()
 
 # pixel_2340x1080_coords = [[770, 380], [920, 390], [1100, 380], [1200, 510]]
@@ -150,8 +141,17 @@ shimo_coords = [1460, 760]
 doufang_coords = [1800, 750]
 
 tree_coords = [920, 390]
+cedao_corrds = [560, 750]
+jishe_corrds = [740, 650]
+yangjuan_corrds = [860, 770]
+
 bamboo_coords = [1100, 380]
+bianzhi_corrds = [1100, 840]
+wanju_corrds = [870, 820]
+
 boil_coords = [1200, 510]
+[1300, 430]
+[1120, 320]
 
 factory_queue_coords = [[1210, 950], [1040, 950], [890, 950], [700, 950], [530, 950], [380, 950]]
 factory_mark_coords = [1800, 950]
@@ -183,10 +183,86 @@ def process_home():
     click_coordinate(home_coords[0], home_coords[1])
     process_factory0(doufang_coords[0], doufang_coords[1], name="doufang")
 
+def harvest_tree():
+    # import pdb; pdb.set_trace()
+    click_coordinate(1200, 620)
+    take_screenshot()
+    compare_region = [1630, 900, 2020, 990]
+    is_diff = compare_images("is_tree_ready.png", "screenshot.png", compare_region, 0.1)
+    if is_diff is False:
+        click_coordinate(factory_mark_coords[0], factory_mark_coords[1])
+        click_coordinate(factory_mark_coords[0], factory_mark_coords[1])
+
+    click_coordinate(factory_close_coords[0], factory_close_coords[1])
+
+def process_factory1(x, y, name):
+    print("process_" + name)
+    click_coordinate(x, y)
+
+    # for coord in factory_queue_coords:
+    click_coordinate(1950, 940)
+    click_coordinate(1650, 940)
+    
+    click_coordinate(factory_close_coords[0], factory_close_coords[1])
+
+def process_tree():
+    print("process_tree")
+    click_bar()
+    click_coordinate(tree_coords[0], tree_coords[1])
+    harvest_tree()
+
+    click_bar()
+    click_coordinate(tree_coords[0], tree_coords[1])
+    process_factory0(cedao_corrds[0], cedao_corrds[1], name="cedao")
+
+    click_bar()
+    click_coordinate(tree_coords[0], tree_coords[1])
+    process_factory1(jishe_corrds[0], jishe_corrds[1], name="jishe")
+
+    click_bar()
+    click_coordinate(tree_coords[0], tree_coords[1])
+    process_factory1(yangjuan_corrds[0], yangjuan_corrds[1], name="yangjuan")
+
+def process_bamboo():
+    print("process_bamboo")
+    click_bar()
+    click_coordinate(bamboo_coords[0], bamboo_coords[1])
+    harvest_tree()
+
+    # click_bar()
+    # click_coordinate(bamboo_coords[0], bamboo_coords[1])
+    # process_factory0(bianzhi_corrds[0], bianzhi_corrds[1], name="bianzhi")
+
+    # click_bar()
+    # click_coordinate(bamboo_coords[0], bamboo_coords[1])
+    # process_factory0(wanju_corrds[0], wanju_corrds[1], name="wanju")
+
+def process_boil():
+    print("process_boil")
+    click_bar()
+    click_coordinate(boil_coords[0], boil_coords[1])
+    harvest_tree()
+
+    # click_bar()
+    # click_coordinate(boil_coords[0], boil_coords[1])
+    # process_factory0(bianzhi_corrds[0], bianzhi_corrds[1], name="bianzhi")
+
+    # click_bar()
+    # click_coordinate(boil_coords[0], boil_coords[1])
+    # process_factory0(wanju_corrds[0], wanju_corrds[1], name="wanju")
+
+# def process_tree():
+#     print("process_tree")
+#     click_bar()
+#     click_coordinate(tree_coords[0], tree_coords[1])
+#     harvest_tree()
 
 def main():
-    # click_bar()
+    # take_screenshot()
     process_home()
+    process_tree()
+    process_bamboo()
+    process_boil()
 
 if __name__ == '__main__':
     main()  # next section explains the use of sys.exit
