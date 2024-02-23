@@ -164,8 +164,17 @@ def process_factory0(x, y, name):
     for coord in factory_queue_coords:
         click_coordinate(coord[0], coord[1])
     
-    for coord in factory_queue_coords:
-        click_coordinate(factory_mark_coords[0], factory_mark_coords[1])
+    click_coordinate(1570, 240)
+    click_coordinate(factory_mark_coords[0], factory_mark_coords[1])
+    click_coordinate(factory_mark_coords[0], factory_mark_coords[1])
+    click_coordinate(1720, 240)
+    click_coordinate(factory_mark_coords[0], factory_mark_coords[1])
+
+    click_coordinate(1570, 240)
+    click_coordinate(factory_mark_coords[0], factory_mark_coords[1])
+    click_coordinate(factory_mark_coords[0], factory_mark_coords[1])
+    click_coordinate(1720, 240)
+    click_coordinate(factory_mark_coords[0], factory_mark_coords[1])
     
     click_coordinate(factory_close_coords[0], factory_close_coords[1])
 
@@ -200,6 +209,7 @@ def process_factory1(x, y, name):
     click_coordinate(x, y)
 
     # for coord in factory_queue_coords:
+    
     click_coordinate(1950, 940)
     click_coordinate(1650, 940)
     
@@ -259,10 +269,12 @@ def process_boil():
 
 def main():
     # take_screenshot()
-    process_home()
-    process_tree()
-    process_bamboo()
-    process_boil()
+    while True:
+        process_home()
+        process_tree()
+        process_bamboo()
+        process_boil()
+        time.sleep(60 * 8)
 
 if __name__ == '__main__':
     main()  # next section explains the use of sys.exit
